@@ -1,10 +1,10 @@
-import './App.css'
-
 function App() {
 
   return (
     <>
-      <h1>Refund</h1>      
+      <div className='bg-gray-500 h-screen flex items-center justify-center'>
+        <h1>Refund</h1>
+      </div>
     </>
   )
 }
