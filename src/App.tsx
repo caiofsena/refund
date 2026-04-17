@@ -18,13 +18,13 @@ function App() {
       </div>
 
       <div className="flex gap-4">
-        <NavLink href="#" state="default">
+        <NavLink to="#">
           Início
         </NavLink>
-        <NavLink href="#" state="hover">
+        <NavLink to="#">
           Histórico
         </NavLink>
-        <NavLink href="#" state="active">
+        <NavLink to="#">
           Relatórios
         </NavLink>
       </div>

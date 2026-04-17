@@ -2,14 +2,12 @@ import { tv, type VariantProps } from 'tailwind-variants';
 
 export const inputVariants = tv({
   base: `
-    w-full peer outline-none text-sm text-gray-100 px-4 py-4 rounded-lg border-2 border-gray-300
+    w-full peer outline-none text-sm text-gray-100 px-4 py-4 rounded-lg border-2 border-gray-300 transition-colors duration-300
     placeholder:text-gray-200
-    focus-within:border-green-100 transition-colors duration-300
+    focus-within:border-green-100 
   `,
-  variants: {
-  },
-  defaultVariants: {
-  },
+  variants: {},
+  defaultVariants: {},
 });
 
 export const inputLabelVariants = tv({
