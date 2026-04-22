@@ -1,8 +1,9 @@
 import { tv, type VariantProps } from 'tailwind-variants';
+import Text from './text';
 
 export const buttonVariants = tv({
   base: `
-    px-5 py-4 bg-green-100 text-white rounded-lg cursor-pointer 
+    flex h-12 px-5 py-4 items-center justify-center bg-green-100 text-white rounded-lg cursor-pointer 
     hover:bg-green-200 transition-colors duration-300
   `,
   variants: {
@@ -34,7 +35,9 @@ export const Button = ({ children, disabled, className, ...props }: ButtonProps)
       disabled={disabled}
       {...props}
     >
-      {children}
+      <Text variant='body-md-bold' color='white'>
+        {children}
+      </Text>
     </button>
   );
 }

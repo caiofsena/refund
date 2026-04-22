@@ -3,7 +3,7 @@ import { Icon, iconVariants } from './icon';
 
 export const iconButtonVariants = tv({
   base: `
-    p-2 bg-green-100 text-white rounded-lg cursor-pointer 
+    flex w-12 h-12 p-2 items-center justify-center bg-green-100 text-white rounded-lg cursor-pointer 
     hover:bg-green-200 transition-colors duration-300
   `,
 });
@@ -12,7 +12,7 @@ export interface IconButtonProps extends
   React.ComponentProps<'button'>, 
   VariantProps<typeof iconButtonVariants>,
   VariantProps<typeof iconVariants> {
-  icon?: React.ComponentProps<typeof Icon>['svg'];
+  icon: React.ComponentProps<typeof Icon>['svg'];
 }
 
 export const IconButton = (
@@ -24,9 +24,7 @@ export const IconButton = (
   }: IconButtonProps) => {
   return (
     <button className={iconButtonVariants({ className })} {...props}>
-      {icon && 
-        <Icon svg={icon} className={iconVariants({ size })} />
-      }
+      <Icon svg={icon} className={iconVariants({ size })} />
     </button>
   );
 }

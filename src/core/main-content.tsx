@@ -2,7 +2,7 @@ import { tv } from 'tailwind-variants';
 import Container from '../components/container';
 
 const mainVariants = tv({
-  base: 'flex flex-col min-h-screen bg-gray-100'
+  base: 'flex flex-col min-h-screen bg-gray-400'
 })
 
 interface MainContentProps extends Omit<React.ComponentProps<'main'>, 'ref'> {}

@@ -2,7 +2,7 @@ import { tv, type VariantProps } from 'tailwind-variants';
 
 export const inputVariants = tv({
   base: `
-    w-full peer outline-none text-sm text-gray-100 px-4 py-4 rounded-lg border-2 border-gray-300 transition-colors duration-300
+    h-12 w-full peer outline-none text-sm text-gray-100 px-4 py-4 rounded-lg border-2 border-gray-300 transition-colors duration-300
     placeholder:text-gray-200
     focus-within:border-green-100 
   `,
@@ -17,7 +17,7 @@ export const inputLabelVariants = tv({
 export interface InputProps
   extends React.ComponentProps<'input'>,
     VariantProps<typeof inputVariants> {
-  label: string;
+  label?: string;
 }
 
 export const Input = ({
@@ -35,9 +35,11 @@ export const Input = ({
         className={inputVariants({ className })}
         {...props}
       />
-      <label htmlFor={inputId} className={inputLabelVariants()}>
-        {label}
-      </label>
+      {label && 
+        <label htmlFor={inputId} className={inputLabelVariants()}>
+          {label}
+        </label>
+      }
     </div>
   );
 };
