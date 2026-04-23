@@ -20,7 +20,7 @@ export const selectLabelVariants = tv({
 
 export const selectTriggerVariants = tv({
   base: `
-    w-full rounded-lg border-2 bg-white px-4 py-4 text-left text-sm
+    w-full h-12 rounded-lg border-2 bg-white px-4 py-4 text-left text-sm
     transition-colors duration-300 outline-none
     flex items-center justify-between
   `,
@@ -86,7 +86,7 @@ export interface SelectProps
   onValueChange?: (value: string) => void;
 }
 
-export function Select({
+export default function Select({
   label,
   placeholder = 'Selecione',
   options,

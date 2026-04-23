@@ -1,8 +1,8 @@
 import Container from '../components/container';
 
-import LogoRefund from '../assets/logo-refund.svg?react';
+import LogoRefund from '../assets/images/logo-refund.svg?react';
 import { NavLink } from '../components/nav-link';
-import { Button } from '../components/button';
+import Button from '../components/button';
 
 export default function Header() {
   return(

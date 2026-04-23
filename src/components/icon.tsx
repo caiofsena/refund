@@ -40,7 +40,7 @@ export interface IconProps extends
   svg: React.FC<React.ComponentProps<'svg'>>;
 }
 
-export const Icon = ({ svg: SvgComponent, size, color, background, className, ...props }: IconProps) => {
+export default function Icon({ svg: SvgComponent, size, color, background, className, ...props }: IconProps) {
   return (
     <Container className={iconWrapperVariants({ background })}>
       <SvgComponent className={iconVariants({ size, color, className })} {...props} />

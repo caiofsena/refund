@@ -1,8 +1,5 @@
-// import { Button } from '../components/button';
-import { IconButton } from '../components/icon-button';
-import { Input } from '../components/input';
-// import { Select } from '../components/select';
-
+import IconButton from '../components/icon-button';
+import Input from '../components/input';
 import Container from '../components/container';
 import Text from '../components/text';
 import RequestItem from '../core/request-item';
@@ -25,7 +22,7 @@ export default function Home() {
         <Container className='flex pb-6 border-b border-b-gray-400'>
           <Input
               id='input-search-name'
-              placeholder="Pesquisar pelo nome"
+              placeholder='Pesquisar pelo nome'
             />
             <IconButton
               icon={MagnifyingGlass}

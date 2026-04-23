@@ -20,12 +20,12 @@ export interface InputProps
   label?: string;
 }
 
-export const Input = ({
+export default function Input({
   label,
   className,
   id,
   ...props
-}: InputProps) => {
+}: InputProps) {
   const inputId = id ?? label.toLowerCase().replace(/\s+/g, '-');
 
   return (

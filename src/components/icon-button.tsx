@@ -1,5 +1,5 @@
 import { tv, type VariantProps } from 'tailwind-variants';
-import { Icon, iconVariants } from './icon';
+import Icon, {iconVariants } from './icon';
 
 export const iconButtonVariants = tv({
   base: `
@@ -25,14 +25,14 @@ export interface IconButtonProps extends
   iconSize?: React.ComponentProps<typeof Icon>['size'];
 }
 
-export const IconButton = (
+export default function IconButton(
   { 
     icon,
     iconSize,
     size, 
     className, 
     ...props 
-  }: IconButtonProps) => {
+  }: IconButtonProps) {
   return (
     <button className={iconButtonVariants({ size, className })} {...props}>
       <Icon svg={icon} color='secondary' size={iconSize} />

@@ -28,7 +28,7 @@ export interface ButtonProps extends
   children: React.ReactNode;
 };
 
-export const Button = ({ children, disabled, className, ...props }: ButtonProps) => {
+export default function Button({ children, disabled, className, ...props }: ButtonProps) {
   return (
     <button
       className={buttonVariants({ disabled, className })}
