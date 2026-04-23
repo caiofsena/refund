@@ -5,13 +5,14 @@ export const containerVariants = tv({
   base: '',
   variants: {
     size: {
+      default: '',
       lg: 'max-w-7xl',
       md: 'max-w-5xl',
       sm: 'max-w-2xl'
     }
   },
   defaultVariants: {
-    size: 'lg'
+    size: 'default'
   }
 })
 
