@@ -26,7 +26,8 @@ export const textVariants = tv({
       primary: 'text-gray-200',
       secondary: 'text-gray-100',
       tertiary: 'text-green-100',
-      white: 'text-white'
+      white: 'text-white',
+      warning: 'text-warning'
     }
   },
   defaultVariants: {

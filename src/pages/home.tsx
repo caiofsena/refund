@@ -45,19 +45,6 @@ export default function Home() {
           <Text>1/3</Text>
           <IconButton icon={CaretRight} size='md'  />
         </Container>
-
-        {/* <Select
-          label="Categoria"
-          options={[
-            { value: 'alimentacao', label: 'Alimentação' },
-            { value: 'hospedagem', label: 'Hospedagem' },
-            { value: 'transporte', label: 'Transporte' },
-            { value: 'servicos', label: 'Serviços' },
-            { value: 'outros', label: 'Outros' },
-          ]}
-        />
-
-        <Button onClick={() => alert('Button clicked!')}>Click me</Button> */}
       </Container>
 
     </Container>
