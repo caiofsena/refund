@@ -4,7 +4,7 @@ import IconButton from './icon-button';
 import CloudArrowUp from '../assets/icons/cloud-arrow-up.svg?react';
 import Container from './container';
 import React, { useRef } from 'react';
-import { useWatch } from 'react-hook-form';
+import { useWatch, type FieldValues, type Path, type UseFormReturn } from 'react-hook-form';
 import Text from './text';
 
 export const inputFileVariants = tv({
@@ -22,33 +22,36 @@ export const inputLabelVariants = tv({
   base: 'mb-2 text-xs uppercase peer-focus-within:text-green-100 transition-colors duration-300',
 });
 
-export interface InputFileProps
-  extends React.ComponentProps<'input'>,
+export interface InputFileProps<TFieldValues extends FieldValues>
+  extends Omit<React.ComponentProps<'input'>, 'form' | 'name'>,
     VariantProps<typeof inputFileVariants> {
   label?: string;
-  form: any,
+  form: Pick<UseFormReturn<TFieldValues>, 'control'>,
+  name: Path<TFieldValues>;
   allowedExtensions?: string[],
-  maxFileSizeMB?: number
+  maxFileSizeMB?: number,
+  error?: string
 }
 
-export default function InputFile({
+export default function InputFile<TFieldValues extends FieldValues>({
   label,
   form,
   allowedExtensions = ['pdf', 'png'],
   maxFileSizeMB = 1,
+  error,
   id,
   name,
   className,
+  ref: externalRef,
   ...props
-}: InputFileProps) {
-  const inputRef = useRef(null);
-  const inputId = id ?? label ? label.toLowerCase().replace(/\s+/g, '-') : 'input-file-id';
-  const formValues = useWatch({control: form.control});
+}: InputFileProps<TFieldValues>) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputId = id ?? label?.toLowerCase().replace(/\s+/g, '-') ?? 'input-file-id';
+  const formValues = useWatch({ control: form.control });
   const formFile: File = React.useMemo(
     () => formValues[name]?.[0],
     [formValues, name]
   );
-  console.log('InputFile: ', form);
   
   const {fileExtension, fileSize} = React.useMemo(() => ({
     fileExtension: formFile?.name?.split('.')?.pop()?.toLowerCase() || '',
@@ -56,28 +59,35 @@ export default function InputFile({
   }), [formFile]);
 
   function isValidExtension() {
-    console.log('isValidExtension: ', fileExtension);
-    
     return allowedExtensions.includes(fileExtension);
   }
 
   function isValidSize() {
-    console.log('isValidExtension: ', fileSize);
     return fileSize <= maxFileSizeMB * 1024 * 1024;
+  }
+
+  function setInputRef(element: HTMLInputElement | null) {
+    inputRef.current = element;
+
+    if (typeof externalRef === 'function') {
+      externalRef(element);
+    }
   }
 
   return (
     <Container className="flex flex-col-reverse w-full">
+      {error && <Text color='warning'>{error}</Text>}
       {formFile && !isValidExtension() && <Text color='warning'>Extensão do arquivo não é permitida</Text>}
       {formFile && !isValidSize() && <Text color='warning'>Tamanho do arquivo ultrapassa limite</Text>}
       <Container className='flex flex-col-reverse'>
         <input
           id={inputId}
-          ref={inputRef}
+          ref={setInputRef}
+          name={name}
           type='file'
           className={inputFileVariants({ className })}
           {...props} />
-        <IconButton icon={CloudArrowUp} onClick={()=> inputRef.current.click()} className='absolute self-end' />
+        <IconButton icon={CloudArrowUp} onClick={()=> inputRef.current?.click()} className='absolute self-end' />
         {label && 
           <label htmlFor={inputId} className={inputLabelVariants()}>
             {label}

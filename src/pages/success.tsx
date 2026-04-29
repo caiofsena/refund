@@ -3,8 +3,11 @@ import Container from '../components/container';
 import Text from '../components/text';
 
 import CheckCircle from '../assets/images/check-circle.svg?react';
+import { useNavigate } from 'react-router';
 
 export default function Success() {
+  const navigate = useNavigate();
+
   return (
     <Container size='sm' className='w-full self-center rounded-2xl bg-white'>
       <Container className="flex flex-col p-10">
@@ -16,7 +19,7 @@ export default function Success() {
           </Text>
         </Container>
         <Container className='flex flex-col mt-10'>
-          <Button onClick={() => alert('Button clicked!')}>Nova solicitação</Button>
+          <Button type='button' onClick={() => navigate('/request')}>Nova solicitação</Button>
         </Container>
       </Container>
     </Container>

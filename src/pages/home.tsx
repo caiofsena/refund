@@ -1,3 +1,6 @@
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router';
+
 import IconButton from '../components/icon-button';
 import Input from '../components/input';
 import Container from '../components/container';
@@ -12,41 +15,167 @@ import Wrench from '../assets/icons/wrench-fill.svg?react';
 import Receipt from '../assets/icons/receipt-fill.svg?react';
 import CaretLeft from '../assets/icons/caret-left.svg?react';
 import CaretRight from '../assets/icons/caret-right.svg?react';
+import {
+  REFUND_CATEGORIES,
+  type Refund,
+  type RefundCategory,
+} from '../models';
+import type { PaginationMeta } from '../models';
+import { listRefunds } from '../services';
+import type { IconProps } from '../components/icon';
+
+const categoryIcons: Record<RefundCategory, IconProps['svg']> = {
+  food: ForkKnife,
+  hosting: Bed,
+  transport: PoliceCar,
+  services: Wrench,
+  other: Receipt,
+};
+
+function centsToCurrency(value: number) {
+  return (value / 100).toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 export default function Home() {
+  const navigate = useNavigate();
+  const [refunds, setRefunds] = useState<Refund[]>([]);
+  const [meta, setMeta] = useState<PaginationMeta | null>(null);
+  const [search, setSearch] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
+  const [page, setPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let ignoreResponse = false;
+
+    async function loadRefunds() {
+      try {
+        setIsLoading(true);
+        setError('');
+
+        const response = await listRefunds({
+          q: appliedSearch.trim() || undefined,
+          page,
+        });
+
+        if (ignoreResponse) return;
+
+        setRefunds(response.refunds.data);
+        setMeta(response.refunds.meta);
+      } catch (loadError) {
+        if (ignoreResponse) return;
+
+        setRefunds([]);
+        setMeta(null);
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : 'Não foi possível carregar as solicitações.',
+        );
+      } finally {
+        if (!ignoreResponse) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadRefunds();
+
+    return () => {
+      ignoreResponse = true;
+    };
+  }, [appliedSearch, page]);
+
+  function handleSearch(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setPage(1);
+    setAppliedSearch(search);
+  }
+
+  function goToPreviousPage() {
+    setPage((currentPage) => Math.max(currentPage - 1, 1));
+  }
+
+  function goToNextPage() {
+    setPage((currentPage) => {
+      const lastPage = meta?.lastPage ?? currentPage;
+      return Math.min(currentPage + 1, lastPage);
+    });
+  }
+
+  const currentPage = meta?.currentPage ?? page;
+  const lastPage = meta?.lastPage ?? 1;
+  const hasPreviousPage = currentPage > 1;
+  const hasNextPage = currentPage < lastPage;
+
   return (
     <Container size='md' className='w-full self-center rounded-2xl bg-white'>
       <Container className="flex flex-col p-10 gap-6">
         <Text variant='heading-lg-bold' color='secondary'>Solicitações</Text>
 
-        <Container className='flex pb-6 border-b border-b-gray-400'>
+        <form
+          className='flex pb-6 border-b border-b-gray-400'
+          onSubmit={handleSearch}
+        >
           <Input
-              id='input-search-name'
-              placeholder='Pesquisar pelo nome'
-            />
-            <IconButton
-              icon={MagnifyingGlass}
-              onClick={() => alert('Icon button clicked!')}
-              className='ml-3'
-            />
-        </Container>
+            id='input-search-name'
+            placeholder='Pesquisar pelo nome'
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+          <IconButton
+            type='submit'
+            icon={MagnifyingGlass}
+            className='ml-3'
+            disabled={isLoading}
+          />
+        </form>
 
-        <Container className='flex flex-col gap-4'>
-          <RequestItem icon={ForkKnife} title='Rodrigo' description='Alimentação' currency='34,78' />
-          <RequestItem icon={Bed} title='Tamires' description='Hospedagem' currency='1.200,00' />
-          <RequestItem icon={ForkKnife} title='Lara' description='Alimentação' currency='12,35' />
-          <RequestItem icon={PoliceCar} title='Elias' description='Transporte' currency='47,65' />
-          <RequestItem icon={Wrench} title='Thiago' description='Serviços' currency='99,90' />
-          <RequestItem icon={Receipt} title='Vinicius' description='Outros' currency='25,89' />
+        <Container className='flex flex-col gap-4 min-h-72'>
+          {isLoading && <Text>Carregando solicitações...</Text>}
+
+          {!isLoading && error && (
+            <Text color='warning'>{error}</Text>
+          )}
+
+          {!isLoading && !error && refunds.length === 0 && (
+            <Text>Nenhuma solicitação encontrada.</Text>
+          )}
+
+          {!isLoading && !error && refunds.map((refund) => (
+            <RequestItem
+              key={refund.id}
+              icon={categoryIcons[refund.category]}
+              title={refund.title}
+              description={REFUND_CATEGORIES[refund.category]}
+              currency={centsToCurrency(refund.value)}
+              onClick={() => navigate(`/request/${refund.id}`)}
+            />
+          ))}
         </Container>
 
         <Container className='flex gap-2.5 items-center justify-center'>
-          <IconButton icon={CaretLeft} size='md' />
-          <Text>1/3</Text>
-          <IconButton icon={CaretRight} size='md'  />
+          <IconButton
+            icon={CaretLeft}
+            size='md'
+            disabled={!hasPreviousPage || isLoading}
+            onClick={goToPreviousPage}
+            className={!hasPreviousPage || isLoading ? 'opacity-50 cursor-not-allowed' : undefined}
+          />
+          <Text>{currentPage}/{lastPage}</Text>
+          <IconButton
+            icon={CaretRight}
+            size='md'
+            disabled={!hasNextPage || isLoading}
+            onClick={goToNextPage}
+            className={!hasNextPage || isLoading ? 'opacity-50 cursor-not-allowed' : undefined}
+          />
         </Container>
       </Container>
-
     </Container>
   );
 }
