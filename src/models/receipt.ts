@@ -13,6 +13,10 @@ export type ReceiptResponse = {
   receipt: Receipt;
 };
 
+export type ReceiptDownloadResponse = {
+  url: string;
+};
+
 export type DeleteReceiptResponse = {
   message: string;
 };

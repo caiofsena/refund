@@ -1,5 +1,10 @@
 export type { PaginatedResponse, PaginationMeta } from './pagination';
-export type { DeleteReceiptResponse, Receipt, ReceiptResponse } from './receipt';
+export type {
+  DeleteReceiptResponse,
+  Receipt,
+  ReceiptDownloadResponse,
+  ReceiptResponse,
+} from './receipt';
 export {
   REFUND_CATEGORIES,
   type CreateRefundPayload,

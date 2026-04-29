@@ -19,8 +19,10 @@ import {
   createReceipt,
   createRefund,
   deleteRefund,
+  getReceiptDownload,
   getReceiptDownloadUrl,
   getRefund,
+  resolveReceiptDownloadUrl,
 } from '../services';
 
 type RequestMode = 'create' | 'view';
@@ -77,6 +79,8 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
   const [deleteError, setDeleteError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [receiptError, setReceiptError] = useState('');
+  const [isOpeningReceipt, setIsOpeningReceipt] = useState(false);
   const displayRefund = refund ?? loadedRefund;
   const isViewMode = mode === 'view' || Boolean(id) || Boolean(displayRefund);
 
@@ -182,6 +186,35 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
     }
   }
 
+  async function handleOpenReceipt() {
+    if (!displayRefund?.receipt.id) return;
+
+    const receiptWindow = window.open('', '_blank');
+
+    try {
+      setIsOpeningReceipt(true);
+      setReceiptError('');
+
+      const { url } = await getReceiptDownload(displayRefund.receipt.id);
+      const downloadUrl = resolveReceiptDownloadUrl(url);
+
+      if (receiptWindow) {
+        receiptWindow.location.href = downloadUrl;
+      } else {
+        window.location.href = downloadUrl;
+      }
+    } catch (error) {
+      receiptWindow?.close();
+      setReceiptError(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível abrir o comprovante.',
+      );
+    } finally {
+      setIsOpeningReceipt(false);
+    }
+  }
+
   return (
     <Container size='sm' className='w-full self-center rounded-2xl bg-white'>
       <Container className="flex flex-col p-10">
@@ -272,17 +305,17 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
 
             <Container className={isViewMode ? 'flex justify-center' : 'flex'}>
               {isViewMode && selectedReceiptUrl ? (
-                <a
-                  href={selectedReceiptUrl}
-                  target='_blank'
-                  rel='noreferrer'
-                  className='flex items-center justify-center gap-2'
+                <button
+                  type='button'
+                  className='flex items-center justify-center gap-2 cursor-pointer'
+                  disabled={isOpeningReceipt}
+                  onClick={handleOpenReceipt}
                 >
                   <Icon svg={FileBold} />
                   <Text variant='body-md-semibold' color='tertiary'>
-                    Abrir comprovante
+                    {isOpeningReceipt ? 'Abrindo comprovante...' : 'Abrir comprovante'}
                   </Text>
-                </a>
+                </button>
               ) : (
                 <InputFile<RequestFormValues>
                   id='receipt'
@@ -320,6 +353,7 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
             </Container>
 
             {submitError && <Text color='warning'>{submitError}</Text>}
+            {receiptError && <Text color='warning'>{receiptError}</Text>}
             {deleteError && <Text color='warning'>{deleteError}</Text>}
 
             {!isViewMode && (

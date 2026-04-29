@@ -3,6 +3,8 @@ export {
   createReceipt,
   deleteReceipt,
   getReceipt,
+  getReceiptDownload,
   getReceiptDownloadUrl,
+  resolveReceiptDownloadUrl,
 } from './receipts';
 export { createRefund, deleteRefund, getRefund, listRefunds } from './refunds';
