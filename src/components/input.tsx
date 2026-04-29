@@ -26,7 +26,7 @@ export default function Input({
   id,
   ...props
 }: InputProps) {
-  const inputId = id ?? label ? label.toLowerCase().replace(/\s+/g, '-') : 'input-id';
+  const inputId = id ?? 'input-id';
 
   return (
     <div className="flex w-full flex-col-reverse">
