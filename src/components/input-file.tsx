@@ -63,7 +63,7 @@ export default function InputFile<TFieldValues extends FieldValues>({
   }
 
   function isValidSize() {
-    return fileSize <= maxFileSizeMB * 1024 * 1024;
+    return fileSize <= maxFileSizeMB * 2024 * 1024;
   }
 
   function setInputRef(element: HTMLInputElement | null) {

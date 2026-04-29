@@ -113,7 +113,7 @@ export default function Home() {
   const hasNextPage = currentPage < lastPage;
 
   return (
-    <Container size='md' className='w-full self-center rounded-2xl bg-white'>
+    <Container size='md' className='w-full mt-6 mb-14 self-center rounded-2xl bg-white'>
       <Container className="flex flex-col p-10 gap-6">
         <Text variant='heading-lg-bold' color='secondary'>Solicitações</Text>
 
@@ -135,7 +135,7 @@ export default function Home() {
           />
         </form>
 
-        <Container className='flex flex-col gap-4 min-h-72'>
+        <Container className='flex flex-col gap-4 min-h-10'>
           {isLoading && <Text>Carregando solicitações...</Text>}
 
           {!isLoading && error && (

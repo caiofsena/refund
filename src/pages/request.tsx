@@ -342,8 +342,8 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
 
                         return (
                           !file ||
-                          file.size <= 1024 * 1024 ||
-                          'O arquivo deve ter no máximo 1 MB.'
+                          file.size <= 2024 * 1024 ||
+                          'O arquivo deve ter no máximo 2 MB.'
                         );
                       },
                     },

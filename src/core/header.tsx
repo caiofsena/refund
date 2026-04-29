@@ -13,7 +13,7 @@ export default function Header() {
       <Container className='flex-1 justify-between'>
         <LogoRefund />
       </Container>
-      <NavLink to='/' className='m-4'>Solicitações de reembolso</NavLink>
+      <NavLink to='/' className='mr-4'>Solicitações de reembolso</NavLink>
       <Button type='button' onClick={() => navigate('/request')}>Nova Solicitação</Button>
     </Container>
   )
