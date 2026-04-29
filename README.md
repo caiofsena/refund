@@ -1,4 +1,4 @@
-# Refund Application
+# Refund
 
 Uma aplicação React para gerenciamento de solicitações de reembolso, permitindo aos usuários criar, visualizar e gerenciar pedidos de reembolso com upload de recibos.
 
@@ -32,7 +32,7 @@ Uma aplicação React para gerenciamento de solicitações de reembolso, permiti
 
 1. Clone o repositório:
    ```bash
-   git clone <url-do-repositorio>
+   git clone https://github.com/caiofsena/refund.git
    cd refund
    ```
 
@@ -81,39 +81,6 @@ src/
 └── assets/              # Ícones e imagens
 ```
 
-## Contribuição
-
-1. Faça um fork do projeto.
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`).
-3. Commit suas mudanças (`git commit -am 'Adiciona nova feature'`).
-4. Push para a branch (`git push origin feature/nova-feature`).
-5. Abra um Pull Request.
-
 ## Licença
 
 Este projeto está sob a licença MIT.
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
