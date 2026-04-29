@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Controller, useForm, type SubmitHandler } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
 
@@ -20,7 +21,6 @@ import {
   createRefund,
   deleteRefund,
   getReceiptDownload,
-  getReceiptDownloadUrl,
   getRefund,
   resolveReceiptDownloadUrl,
 } from '../services';
@@ -71,17 +71,20 @@ function getDefaultValues(refund?: Refund): RequestFormValues {
 
 export default function Request({ mode = 'create', refund }: RequestProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const { id } = useParams();
-  const [loadedRefund, setLoadedRefund] = useState<Refund | null>(null);
-  const [isLoadingRefund, setIsLoadingRefund] = useState(false);
-  const [loadRefundError, setLoadRefundError] = useState('');
-  const [submitError, setSubmitError] = useState('');
-  const [deleteError, setDeleteError] = useState('');
-  const [isDeleting, setIsDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [receiptError, setReceiptError] = useState('');
-  const [isOpeningReceipt, setIsOpeningReceipt] = useState(false);
-  const displayRefund = refund ?? loadedRefund;
+
+  const refundQuery = useQuery({
+    queryKey: ['refund', id],
+    queryFn: async () => {
+      const response = await getRefund(id as string);
+      return response.refund;
+    },
+    enabled: Boolean(id) && !refund,
+  });
+
+  const displayRefund = refund ?? refundQuery.data ?? null;
   const isViewMode = mode === 'view' || Boolean(id) || Boolean(displayRefund);
 
   const form = useForm<RequestFormValues>({
@@ -89,113 +92,53 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
     mode: 'onBlur',
   });
 
-  const selectedReceiptUrl = displayRefund?.receipt.id
-    ? getReceiptDownloadUrl(displayRefund.receipt.id)
-    : '';
-
-  useEffect(() => {
-    if (!id) {
-      setLoadedRefund(null);
-      setLoadRefundError('');
-      return;
-    }
-
-    let ignoreResponse = false;
-
-    async function loadRefund() {
-      try {
-        setIsLoadingRefund(true);
-        setLoadRefundError('');
-
-        const response = await getRefund(id as string);
-
-        if (ignoreResponse) return;
-
-        setLoadedRefund(response.refund);
-      } catch (error) {
-        if (ignoreResponse) return;
-
-        setLoadedRefund(null);
-        setLoadRefundError(
-          error instanceof Error
-            ? error.message
-            : 'Não foi possível carregar a solicitação.',
-        );
-      } finally {
-        if (!ignoreResponse) {
-          setIsLoadingRefund(false);
-        }
-      }
-    }
-
-    loadRefund();
-
-    return () => {
-      ignoreResponse = true;
-    };
-  }, [id]);
-
   useEffect(() => {
     form.reset(getDefaultValues(displayRefund ?? undefined));
   }, [displayRefund, form]);
 
-  const onSubmit: SubmitHandler<RequestFormValues> = async (data) => {
-    const file = data.receipt?.[0];
+  const createRefundMutation = useMutation({
+    mutationFn: async (data: RequestFormValues) => {
+      const file = data.receipt?.[0];
 
-    if (!file) return;
-
-    try {
-      setSubmitError('');
+      if (!file) {
+        throw new Error('Envie o comprovante.');
+      }
 
       const { receipt } = await createReceipt(file);
-      await createRefund({
+
+      return createRefund({
         title: data.title.trim(),
         category: data.category as RefundCategory,
         value: currencyToCents(data.value),
         receipt: receipt.id,
       });
-
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['refunds'] });
       navigate('/success');
-    } catch (error) {
-      setSubmitError(
-        error instanceof Error
-          ? error.message
-          : 'Não foi possível enviar a solicitação.',
-      );
-    }
-  };
+    },
+  });
 
-  async function handleDeleteRefund() {
-    if (!displayRefund?.id) return;
-
-    try {
-      setIsDeleting(true);
-      setDeleteError('');
-
-      await deleteRefund(displayRefund.id);
-      navigate('/');
-    } catch (error) {
-      setDeleteError(
-        error instanceof Error
-          ? error.message
-          : 'Não foi possível excluir a solicitação.',
-      );
-    } finally {
-      setIsDeleting(false);
+  const deleteRefundMutation = useMutation({
+    mutationFn: async (refundId: string) => deleteRefund(refundId),
+    onSuccess: async () => {
       setIsDeleteModalOpen(false);
-    }
-  }
+      await queryClient.invalidateQueries({ queryKey: ['refunds'] });
+      navigate('/');
+    },
+    onSettled: () => {
+      setIsDeleteModalOpen(false);
+    },
+  });
 
-  async function handleOpenReceipt() {
-    if (!displayRefund?.receipt.id) return;
-
-    const receiptWindow = window.open('', '_blank');
-
-    try {
-      setIsOpeningReceipt(true);
-      setReceiptError('');
-
-      const { url } = await getReceiptDownload(displayRefund.receipt.id);
+  const receiptDownloadMutation = useMutation({
+    mutationFn: async ({
+      receiptId,
+    }: {
+      receiptId: string;
+      receiptWindow: Window | null;
+    }) => getReceiptDownload(receiptId),
+    onSuccess: ({ url }, { receiptId, receiptWindow }) => {
       const downloadUrl = resolveReceiptDownloadUrl(url);
 
       if (receiptWindow) {
@@ -203,17 +146,45 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
       } else {
         window.location.href = downloadUrl;
       }
-    } catch (error) {
+
+      queryClient.setQueryData(['receipt-download', receiptId], { url });
+    },
+    onError: (_error, { receiptWindow }) => {
       receiptWindow?.close();
-      setReceiptError(
-        error instanceof Error
-          ? error.message
-          : 'Não foi possível abrir o comprovante.',
-      );
-    } finally {
-      setIsOpeningReceipt(false);
-    }
+    },
+  });
+
+  const onSubmit: SubmitHandler<RequestFormValues> = async (data) => {
+    createRefundMutation.mutate(data);
+  };
+
+  function handleDeleteRefund() {
+    if (!displayRefund?.id) return;
+
+    deleteRefundMutation.mutate(displayRefund.id);
   }
+
+  function handleOpenReceipt() {
+    if (!displayRefund?.receipt.id) return;
+
+    receiptDownloadMutation.mutate({
+      receiptId: displayRefund.receipt.id,
+      receiptWindow: window.open('', '_blank'),
+    });
+  }
+
+  const loadRefundError = refundQuery.error instanceof Error
+    ? refundQuery.error.message
+    : 'Não foi possível carregar a solicitação.';
+  const submitError = createRefundMutation.error instanceof Error
+    ? createRefundMutation.error.message
+    : 'Não foi possível enviar a solicitação.';
+  const deleteError = deleteRefundMutation.error instanceof Error
+    ? deleteRefundMutation.error.message
+    : 'Não foi possível excluir a solicitação.';
+  const receiptError = receiptDownloadMutation.error instanceof Error
+    ? receiptDownloadMutation.error.message
+    : 'Não foi possível abrir o comprovante.';
 
   return (
     <Container size='sm' className='w-full self-center rounded-2xl bg-white'>
@@ -227,15 +198,15 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
           </Text>
         </Container>
 
-        {isLoadingRefund && (
+        {refundQuery.isLoading && (
           <Text className='mt-10'>Carregando solicitação...</Text>
         )}
 
-        {!isLoadingRefund && loadRefundError && (
+        {!refundQuery.isLoading && refundQuery.isError && (
           <Text color='warning' className='mt-10'>{loadRefundError}</Text>
         )}
 
-        {!isLoadingRefund && !loadRefundError && (
+        {!refundQuery.isLoading && !refundQuery.isError && (
           <form onSubmit={form.handleSubmit(onSubmit)} noValidate>
           <Container className='flex flex-col mt-10 gap-8'>
             <Container className='flex flex-col gap-2'>
@@ -304,16 +275,16 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
             </Container>
 
             <Container className={isViewMode ? 'flex justify-center' : 'flex'}>
-              {isViewMode && selectedReceiptUrl ? (
+              {isViewMode && displayRefund?.receipt.id ? (
                 <button
                   type='button'
                   className='flex items-center justify-center gap-2 cursor-pointer'
-                  disabled={isOpeningReceipt}
+                  disabled={receiptDownloadMutation.isPending}
                   onClick={handleOpenReceipt}
                 >
                   <Icon svg={FileBold} />
                   <Text variant='body-md-semibold' color='tertiary'>
-                    {isOpeningReceipt ? 'Abrindo comprovante...' : 'Abrir comprovante'}
+                    {receiptDownloadMutation.isPending ? 'Abrindo comprovante...' : 'Abrir comprovante'}
                   </Text>
                 </button>
               ) : (
@@ -352,20 +323,20 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
               )}
             </Container>
 
-            {submitError && <Text color='warning'>{submitError}</Text>}
-            {receiptError && <Text color='warning'>{receiptError}</Text>}
-            {deleteError && <Text color='warning'>{deleteError}</Text>}
+            {createRefundMutation.isError && <Text color='warning'>{submitError}</Text>}
+            {receiptDownloadMutation.isError && <Text color='warning'>{receiptError}</Text>}
+            {deleteRefundMutation.isError && <Text color='warning'>{deleteError}</Text>}
 
             {!isViewMode && (
-              <Button type='submit' disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Enviando...' : 'Enviar'}
+              <Button type='submit' disabled={createRefundMutation.isPending}>
+                {createRefundMutation.isPending ? 'Enviando...' : 'Enviar'}
               </Button>
             )}
 
             {isViewMode && displayRefund?.id && (
               <Button
                 type='button'
-                disabled={isDeleting}
+                disabled={deleteRefundMutation.isPending}
                 onClick={() => setIsDeleteModalOpen(true)}
               >
                 Excluir
@@ -402,17 +373,17 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
               <button
                 type='button'
                 className='flex h-12 items-center justify-center px-5 text-sm font-semibold text-green-100'
-                disabled={isDeleting}
+                disabled={deleteRefundMutation.isPending}
                 onClick={() => setIsDeleteModalOpen(false)}
               >
                 Cancelar
               </button>
               <Button
                 type='button'
-                disabled={isDeleting}
+                disabled={deleteRefundMutation.isPending}
                 onClick={handleDeleteRefund}
               >
-                {isDeleting ? 'Excluindo...' : 'Confirmar'}
+                {deleteRefundMutation.isPending ? 'Excluindo...' : 'Confirmar'}
               </Button>
             </Container>
           </Container>

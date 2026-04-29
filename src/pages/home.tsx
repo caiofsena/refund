@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { keepPreviousData, useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import IconButton from '../components/icon-button';
@@ -17,10 +18,8 @@ import CaretLeft from '../assets/icons/caret-left.svg?react';
 import CaretRight from '../assets/icons/caret-right.svg?react';
 import {
   REFUND_CATEGORIES,
-  type Refund,
   type RefundCategory,
 } from '../models';
-import type { PaginationMeta } from '../models';
 import { listRefunds } from '../services';
 import type { IconProps } from '../components/icon';
 
@@ -41,54 +40,18 @@ function centsToCurrency(value: number) {
 
 export default function Home() {
   const navigate = useNavigate();
-  const [refunds, setRefunds] = useState<Refund[]>([]);
-  const [meta, setMeta] = useState<PaginationMeta | null>(null);
   const [search, setSearch] = useState('');
   const [appliedSearch, setAppliedSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
 
-  useEffect(() => {
-    let ignoreResponse = false;
-
-    async function loadRefunds() {
-      try {
-        setIsLoading(true);
-        setError('');
-
-        const response = await listRefunds({
-          q: appliedSearch.trim() || undefined,
-          page,
-        });
-
-        if (ignoreResponse) return;
-
-        setRefunds(response.refunds.data);
-        setMeta(response.refunds.meta);
-      } catch (loadError) {
-        if (ignoreResponse) return;
-
-        setRefunds([]);
-        setMeta(null);
-        setError(
-          loadError instanceof Error
-            ? loadError.message
-            : 'Não foi possível carregar as solicitações.',
-        );
-      } finally {
-        if (!ignoreResponse) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    loadRefunds();
-
-    return () => {
-      ignoreResponse = true;
-    };
-  }, [appliedSearch, page]);
+  const refundsQuery = useQuery({
+    queryKey: ['refunds', { q: appliedSearch.trim(), page }],
+    queryFn: () => listRefunds({
+      q: appliedSearch.trim() || undefined,
+      page,
+    }),
+    placeholderData: keepPreviousData,
+  });
 
   function handleSearch(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -102,15 +65,20 @@ export default function Home() {
 
   function goToNextPage() {
     setPage((currentPage) => {
-      const lastPage = meta?.lastPage ?? currentPage;
+      const lastPage = refundsQuery.data?.refunds.meta.lastPage ?? currentPage;
       return Math.min(currentPage + 1, lastPage);
     });
   }
 
+  const refunds = refundsQuery.data?.refunds.data ?? [];
+  const meta = refundsQuery.data?.refunds.meta;
   const currentPage = meta?.currentPage ?? page;
   const lastPage = meta?.lastPage ?? 1;
   const hasPreviousPage = currentPage > 1;
   const hasNextPage = currentPage < lastPage;
+  const errorMessage = refundsQuery.error instanceof Error
+    ? refundsQuery.error.message
+    : 'Não foi possível carregar as solicitações.';
 
   return (
     <Container size='md' className='w-full mt-6 mb-14 self-center rounded-2xl bg-white'>
@@ -131,22 +99,22 @@ export default function Home() {
             type='submit'
             icon={MagnifyingGlass}
             className='ml-3'
-            disabled={isLoading}
+            disabled={refundsQuery.isFetching}
           />
         </form>
 
         <Container className='flex flex-col gap-4 min-h-10'>
-          {isLoading && <Text>Carregando solicitações...</Text>}
+          {refundsQuery.isLoading && <Text>Carregando solicitações...</Text>}
 
-          {!isLoading && error && (
-            <Text color='warning'>{error}</Text>
+          {!refundsQuery.isLoading && refundsQuery.isError && (
+            <Text color='warning'>{errorMessage}</Text>
           )}
 
-          {!isLoading && !error && refunds.length === 0 && (
+          {!refundsQuery.isLoading && !refundsQuery.isError && refunds.length === 0 && (
             <Text>Nenhuma solicitação encontrada.</Text>
           )}
 
-          {!isLoading && !error && refunds.map((refund) => (
+          {!refundsQuery.isLoading && !refundsQuery.isError && refunds.map((refund) => (
             <RequestItem
               key={refund.id}
               icon={categoryIcons[refund.category]}
@@ -162,17 +130,17 @@ export default function Home() {
           <IconButton
             icon={CaretLeft}
             size='md'
-            disabled={!hasPreviousPage || isLoading}
+            disabled={!hasPreviousPage || refundsQuery.isFetching}
             onClick={goToPreviousPage}
-            className={!hasPreviousPage || isLoading ? 'opacity-50 cursor-not-allowed' : undefined}
+            className={!hasPreviousPage || refundsQuery.isFetching ? 'opacity-50 cursor-not-allowed' : undefined}
           />
           <Text>{currentPage}/{lastPage}</Text>
           <IconButton
             icon={CaretRight}
             size='md'
-            disabled={!hasNextPage || isLoading}
+            disabled={!hasNextPage || refundsQuery.isFetching}
             onClick={goToNextPage}
-            className={!hasNextPage || isLoading ? 'opacity-50 cursor-not-allowed' : undefined}
+            className={!hasNextPage || refundsQuery.isFetching ? 'opacity-50 cursor-not-allowed' : undefined}
           />
         </Container>
       </Container>
