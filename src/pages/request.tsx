@@ -76,6 +76,7 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
   const [submitError, setSubmitError] = useState('');
   const [deleteError, setDeleteError] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const displayRefund = refund ?? loadedRefund;
   const isViewMode = mode === 'view' || Boolean(id) || Boolean(displayRefund);
 
@@ -177,6 +178,7 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
       );
     } finally {
       setIsDeleting(false);
+      setIsDeleteModalOpen(false);
     }
   }
 
@@ -330,9 +332,9 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
               <Button
                 type='button'
                 disabled={isDeleting}
-                onClick={handleDeleteRefund}
+                onClick={() => setIsDeleteModalOpen(true)}
               >
-                {isDeleting ? 'Excluindo...' : 'Excluir'}
+                Excluir
               </Button>
             )}
 
@@ -340,6 +342,48 @@ export default function Request({ mode = 'create', refund }: RequestProps) {
           </form>
         )}
       </Container>
+
+      {isDeleteModalOpen && (
+        <div
+          className='fixed inset-0 z-50 flex items-center justify-center bg-gray-100/80 px-5'
+          role='dialog'
+          aria-modal='true'
+          aria-labelledby='delete-refund-title'
+        >
+          <Container className='w-full max-w-xl rounded-xl bg-white p-10 shadow-lg'>
+            <Container className='flex flex-col gap-3'>
+              <Text
+                id='delete-refund-title'
+                variant='heading-lg-bold'
+                color='secondary'
+              >
+                Excluir solicitação
+              </Text>
+              <Text>
+                Tem certeza que deseja excluir essa solicitação? Essa ação é irreversível.
+              </Text>
+            </Container>
+
+            <Container className='mt-8 flex justify-end gap-4'>
+              <button
+                type='button'
+                className='flex h-12 items-center justify-center px-5 text-sm font-semibold text-green-100'
+                disabled={isDeleting}
+                onClick={() => setIsDeleteModalOpen(false)}
+              >
+                Cancelar
+              </button>
+              <Button
+                type='button'
+                disabled={isDeleting}
+                onClick={handleDeleteRefund}
+              >
+                {isDeleting ? 'Excluindo...' : 'Confirmar'}
+              </Button>
+            </Container>
+          </Container>
+        </div>
+      )}
     </Container>
   )
 }
